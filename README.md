@@ -1,6 +1,6 @@
 # CCTrans: Simplifying and Improving Crowd Counting with Transformer(Code reproduction)
 * Code reproduction
-* Original paper [Link](https://arxiv.org/pdf/2103.05242.pdf)
+* Original paper [Link](https://arxiv.org/pdf/2109.14483.pdf)
 
 ## Overview
 * Presentate only the experiment on dataset ShanghaiTech Part A (loss: DM-Count)
