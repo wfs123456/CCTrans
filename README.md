@@ -19,6 +19,7 @@
 # Testing
 * python test_image_patch.py
 * Due to crop training with size of 256x256, the validation image is divided into several patches with size of 256x256, and the overlapping area is averaged.
+* Download the pretrained model from Baidu-Disk(提取码: se59) [link](https://pan.baidu.com/s/16qY_cFIUAUaDRsdr5vNsWQ)
 
 # Visualization
 * python vis_densityMap.py
