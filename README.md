@@ -18,7 +18,7 @@
 
 # Testing
 * python test_image_patch.py
-* Due to crop training with size of 256*256,  the validation image is divided into several patches with size of 256*256, and the overlapping area is averaged.
+* Due to crop training with size of 256x256, the validation image is divided into several patches with size of 256x256, and the overlapping area is averaged.
 
 # Visualization
 * python vis_densityMap.py
