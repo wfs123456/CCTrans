@@ -233,8 +233,13 @@ class SBlock(TimmBlock):
 class GroupBlock(TimmBlock):
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop=0., attn_drop=0.,
                  drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, sr_ratio=1, ws=1):
-        super(GroupBlock, self).__init__(dim, num_heads, mlp_ratio, qkv_bias, qk_scale, drop, attn_drop,
-                                         drop_path, act_layer, norm_layer)
+
+        #super(GroupBlock, self).__init__(dim, num_heads, mlp_ratio, qkv_bias, qk_scale, drop, attn_drop,
+        #                                drop_path, act_layer, norm_layer)
+
+        #delete the qk_scale
+        super(GroupBlock, self).__init__(dim, num_heads, mlp_ratio, qkv_bias, drop, attn_drop,
+                                        drop_path, act_layer, norm_layer)
         del self.attn
         if ws == 1:
             self.attn = Attention(dim, num_heads, qkv_bias, qk_scale, attn_drop, drop, sr_ratio)
@@ -306,11 +311,13 @@ class PyramidVisionTransformer(nn.Module):
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
         cur = 0
         for k in range(len(depths)):
-            _block = nn.ModuleList([block_cls(
-                dim=embed_dims[k], num_heads=num_heads[k], mlp_ratio=mlp_ratios[k], qkv_bias=qkv_bias,
-                qk_scale=qk_scale,
-                drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + i], norm_layer=norm_layer,
-                sr_ratio=sr_ratios[k])
+            _block = nn.ModuleList([
+                block_cls(
+                    dim=embed_dims[k], num_heads=num_heads[k], mlp_ratio=mlp_ratios[k], qkv_bias=qkv_bias,
+                    qk_scale=qk_scale,
+                    drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[cur + i], norm_layer=norm_layer,
+                    sr_ratio=sr_ratios[k]
+                    )
                 for i in range(depths[k])])
             self.blocks.append(_block)
             cur += depths[k]
@@ -552,7 +559,7 @@ def alt_gvt_large(pretrained=False, **kwargs):
     model.default_cfg = _cfg()
     if pretrained:
         '''download from https://github.com/Meituan-AutoML/Twins/alt_gvt_large.pth'''
-        checkpoint = torch.load('/home/xuzhiwen/home/xuzhiwen/dataset_wfs/DM-Count-master/Networks/alt_gvt_large.pth')
+        checkpoint = torch.load('/train_folder/head_detection/CCTrans/model_weights/alt_gvt_large.pth') # todo pass path as argument
         model.load_state_dict(checkpoint, strict=False)
         print("load transformer pretrained")
     return model

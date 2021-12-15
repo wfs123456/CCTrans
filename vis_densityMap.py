@@ -123,14 +123,14 @@ def vis(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='2', help='assign device')
-    parser.add_argument("--image_path", type=str, default="/home/hdd/dataset_xzw/ShanghaiTech/part_A_final/test_data/images/IMG_121.jpg",
+    parser.add_argument('--device', default='0', help='assign device')
+    parser.add_argument("--image_path", type=str, required=True,
                         help="the image path to be detected.")
-    parser.add_argument("--weight_path", type=str, default='/home/xuzhiwen/home/xuzhiwen/dataset_wfs/DM-Count-master/ckpts/ALTGVT/12-1-input-256_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_mae 54.36.pth',
+    parser.add_argument("--weight_path", type=str, required=True,
                         help="the weight path to be loaded")
     parser.add_argument('--crop_size', type=int, default=256,
                         help='the crop size of the train image')
-    parser.add_argument('--batch-size', type=int, default=8, help='train batch size')
+    parser.add_argument('--batch-size', type=int, default=1, help='train batch size')
 
     args = parser.parse_args()
     print(args)

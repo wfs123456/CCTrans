@@ -6,3 +6,5 @@ opencv-python
 gdown
 pillow==6.2.2
 gradio
+timm==0.3.2
+wandb
