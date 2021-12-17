@@ -173,7 +173,7 @@ class Crowd_sh(Base):
 
         self.im_list = sorted(glob(os.path.join(self.root_path, 'images', '*.jpg')))
 
-        print('number of img: {}'.format(len(self.im_list)))
+        print('number of img [{}]: {}'.format(method, len(self.im_list)))
 
     def __len__(self):
         return len(self.im_list)
@@ -181,10 +181,9 @@ class Crowd_sh(Base):
     def __getitem__(self, item):
         img_path = self.im_list[item]
         name = os.path.basename(img_path).split('.')[0]
-        gd_path = os.path.join(self.root_path, 'ground_truth', 'GT_{}.mat'.format(name))
+        gd_path = os.path.join(self.root_path, 'ground-truth', 'GT_{}.mat'.format(name))
         img = Image.open(img_path).convert('RGB')
         keypoints = sio.loadmat(gd_path)['image_info'][0][0][0][0][0]
-
         if self.method == 'train':
             return self.train_transform(img, keypoints)
         elif self.method == 'val':
@@ -198,6 +197,122 @@ class Crowd_sh(Base):
                 img = img.resize((wd, ht), Image.BICUBIC)
             img = self.trans(img)
             return img, len(keypoints), name
+
+    def train_transform(self, img, keypoints):
+        wd, ht = img.size
+        st_size = 1.0 * min(wd, ht)
+        # resize the image to fit the crop size
+        if st_size < self.c_size:
+            rr = 1.0 * self.c_size / st_size
+            wd = round(wd * rr)
+            ht = round(ht * rr)
+            st_size = 1.0 * min(wd, ht)
+            img = img.resize((wd, ht), Image.BICUBIC)
+            keypoints = keypoints * rr
+        assert st_size >= self.c_size, print(wd, ht)
+        assert len(keypoints) >= 0
+        i, j, h, w = random_crop(ht, wd, self.c_size, self.c_size)
+        img = F.crop(img, i, j, h, w)
+        if len(keypoints) > 0:
+            keypoints = keypoints - [j, i]
+            idx_mask = (keypoints[:, 0] >= 0) * (keypoints[:, 0] <= w) * \
+                       (keypoints[:, 1] >= 0) * (keypoints[:, 1] <= h)
+            keypoints = keypoints[idx_mask]
+        else:
+            keypoints = np.empty([0, 2])
+
+        gt_discrete = gen_discrete_map(h, w, keypoints)
+        down_w = w // self.d_ratio
+        down_h = h // self.d_ratio
+        gt_discrete = gt_discrete.reshape([down_h, self.d_ratio, down_w, self.d_ratio]).sum(axis=(1, 3))
+        assert np.sum(gt_discrete) == len(keypoints)
+
+        if len(keypoints) > 0:
+            if random.random() > 0.5:
+                img = F.hflip(img)
+                gt_discrete = np.fliplr(gt_discrete)
+                keypoints[:, 0] = w - keypoints[:, 0] - 1
+        else:
+            if random.random() > 0.5:
+                img = F.hflip(img)
+                gt_discrete = np.fliplr(gt_discrete)
+        gt_discrete = np.expand_dims(gt_discrete, 0)
+
+        return self.trans(img), torch.from_numpy(keypoints.copy()).float(), torch.from_numpy(
+            gt_discrete.copy()).float()
+
+
+class CustomDataset(Base):
+    '''
+    Class that allows training for a custom dataset. The folder are designed in the following way:
+    root_dataset_path:
+        -> images_1
+        ->another_folder_with_image
+        ->train.list
+        ->valid.list
+
+    The content of the lists file (csv with space as separator) are:
+        img_xx__path label_xx_path
+        img_xx1__path label_xx1_path
+
+    where label_xx_path contains a list of x,y position of the head.
+    '''
+    def __init__(self, root_path, crop_size,
+                 downsample_ratio=8,
+                 method='train'):
+        super().__init__(root_path, crop_size, downsample_ratio)
+        self.method = method
+        if method not in ['train', 'valid', 'test']:
+            raise Exception("not implement")
+
+        # read the list file
+        self.img_to_label = {}
+        list_file = f'{method}.list' # train.list, valid.list or test.list
+        with open(os.path.join(self.root_path, list_file)) as fin:
+                for line in fin:
+                    if len(line) < 2: 
+                        continue
+                    line = line.strip().split()
+                    self.img_to_label[os.path.join(self.root_path, line[0].strip())] = \
+                                    os.path.join(self.root_path, line[1].strip())
+        self.img_list = sorted(list(self.img_to_label.keys()))
+
+
+        print('number of img [{}]: {}'.format(method, len(self.img_list)))
+
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, item):
+        img_path = self.img_list[item]
+        gt_path = self.img_to_label[img_path]
+        img_name = os.path.basename(img_path).split('.')[0]
+
+        img = Image.open(img_path).convert('RGB')
+        keypoints = self.load_head_annotation(gt_path)
+       
+        if self.method == 'train':
+            return self.train_transform(img, keypoints)
+        elif self.method == 'valid' or self.method == 'test':
+            wd, ht = img.size
+            st_size = 1.0 * min(wd, ht)
+            if st_size < self.c_size:
+                rr = 1.0 * self.c_size / st_size
+                wd = round(wd * rr)
+                ht = round(ht * rr)
+                st_size = 1.0 * min(wd, ht)
+                img = img.resize((wd, ht), Image.BICUBIC)
+            img = self.trans(img)
+            return img, len(keypoints), img_name
+
+    def load_head_annotation(self, gt_path):
+        annotations = []
+        with open(gt_path) as annotation:
+            for line in annotation:
+                x = float(line.strip().split(' ')[0])
+                y = float(line.strip().split(' ')[1])
+                annotations.append([x, y])
+        return np.array(annotations)
 
     def train_transform(self, img, keypoints):
         wd, ht = img.size

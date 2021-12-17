@@ -3,7 +3,6 @@ import torch
 import os
 import numpy as np
 import datasets.crowd as crowd
-from models import vgg19
 from Networks import ALTGVT
 import torch.nn.functional as F
 
@@ -24,19 +23,18 @@ def cal_new_tensor(img_tensor, min_size=256):
     return img_tensor
 
 parser = argparse.ArgumentParser(description='Test ')
-parser.add_argument('--device', default='2', help='assign device')
+parser.add_argument('--device', default='0', help='assign device')
 parser.add_argument('--batch-size', type=int, default=8,
                         help='train batch size')
 parser.add_argument('--crop-size', type=int, default=256,
                     help='the crop size of the train image')
-parser.add_argument('--model-path', type=str, default='/home/xuzhiwen/home/xuzhiwen/dataset_wfs/DM-Count-master/ckpts/ALTGVT/12-1-input-256_wot-0.1_wtv-0.01_reg-10.0_nIter-100_normCood-0/best_model_mae 54.36.pth',
+parser.add_argument('--model-path', type=str, required=True,
                     help='saved model path')
 parser.add_argument('--data-path', type=str,
-                    default='/home/hdd/dataset_xzw/ShanghaiTech/part_A_final',
-                    help='saved model path')
+                    help='dataset path')
 parser.add_argument('--dataset', type=str, default='sha',
-                    help='dataset name: qnrf, nwpu, sha, shb')
-parser.add_argument('--pred-density-map-path', type=str, default='',
+                    help='dataset name: qnrf, nwpu, sha, shb, custom')
+parser.add_argument('--pred-density-map-path', type=str, default='inference_results',
                     help='save predicted density maps when pred-density-map-path is not empty.')
 
 def test(args, isSave = True):
@@ -52,6 +50,8 @@ def test(args, isSave = True):
         dataset = crowd.Crowd_nwpu(os.path.join(data_path, 'val'), crop_size, 8, method='val')
     elif args.dataset.lower() == 'sha' or args.dataset.lower() == 'shb':
         dataset = crowd.Crowd_sh(os.path.join(data_path, 'test_data'), crop_size, 8, method='val')
+    elif args.dataset.lower() == 'custom':
+        dataset = crowd.CustomDataset(data_path, crop_size, downsample_ratio=8, method='test')
     else:
         raise NotImplementedError
     dataloader = torch.utils.data.DataLoader(dataset, 1, shuffle=False,
@@ -87,6 +87,7 @@ def test(args, isSave = True):
                 crop_pred, _ = model(crop_imgs[gs:gt])
 
                 _, _, h1, w1 = crop_pred.size()
+                
                 crop_pred = F.interpolate(crop_pred, size=(h1 * 8, w1 * 8), mode='bilinear', align_corners=True) / 64
 
                 crop_preds.append(crop_pred)
@@ -106,7 +107,7 @@ def test(args, isSave = True):
             outputs = pred_map / mask
 
             img_err = count[0].item() - torch.sum(outputs).item()
-            print(name, img_err, count[0].item(), torch.sum(outputs).item())
+            print("Img name: ", name, "Error: ", img_err, "GT count: ", count[0].item(), "Model out: ", torch.sum(outputs).item())
             image_errs.append(img_err)
             result.append([name, count[0].item(), torch.sum(outputs).item(), img_err])
 

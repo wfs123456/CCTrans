@@ -4,17 +4,25 @@
 
 ## Overview
 * Presentate only the experiment on dataset ShanghaiTech Part A (loss: DM-Count)
-* ShanghaiTech Part A result:  MAE/MSE 54.8/86.6(original paper)        MAE/MSE 54.3/91.6(reproduction)
+* ShanghaiTech Part A 
 
+| Code      | MAE   | MSE      |
+|-----------|-------|-------|
+| PAPER     | 54.8  | 86.6  |
+| This code | 54.20 | 88.97 |
+
+Our code reaches this result with the standard hyperparameter set in code. Trained with batch-size=8 for around 1500 epoch(as said in the paper). Best validation at around epoch 606
 # code framework
 * adopt code of DM-Count.
 * [link](https://github.com/cvlab-stonybrook/DM-Count)
 
 # Training
+Take a look at the arguments accepted by ```train.py```
 * update root "data-dir" in ./train.py.
 * load pretrained weights of ImageNet-1k in ./Networks/ALTGVT.py.
-* pretrained weights [link](https://github.com/Meituan-AutoML/Twins/alt_gvt_large.pth)
-* python train.py
+* pretrained weights [link](https://drive.google.com/file/d/1um39wxIaicmOquP2fr_SiZdxNCUou8w-/view)
+* [new] Added [wandb](https://wandb.ai/) integration. If you want to log with wandb, set ```--wandb 1``` in ```train.py``` after having logged in to wandb (```wandb login``` in console)
+* launch with ```python train.py```
 
 # Testing
 * python test_image_patch.py
@@ -26,14 +34,7 @@
 * save to ./vis/part_A_final
 
 # Environment
-	python >=3.6 
-	torch==1.7.0
-	torchvision==0.8.1
-	timm==0.3.2
-	opencv-python >=4.0
-	scipy >=1.4.0
-	pillow >=7.0.0
-	imageio >=1.18
+	See requirements.txt
 	
 
 
