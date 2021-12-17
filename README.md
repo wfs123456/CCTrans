@@ -4,8 +4,14 @@
 
 ## Overview
 * Presentate only the experiment on dataset ShanghaiTech Part A (loss: DM-Count)
-* ShanghaiTech Part A result:  MAE/MSE 54.8/86.6(original paper)        MAE/MSE 54.3/91.6(reproduction)
+* ShanghaiTech Part A 
 
+| Code      | MAE   | MSE      |
+|-----------|-------|-------|
+| PAPER     | 54.8  | 86.6  |
+| This code | 54.20 | 88.97 |
+
+Our code reaches this result with the standard hyperparameter set in code. Trained with batch-size=8 for around 1500 epoch(as said in the paper). Best validation at around epoch 606
 # code framework
 * adopt code of DM-Count.
 * [link](https://github.com/cvlab-stonybrook/DM-Count)
