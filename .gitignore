@@ -118,3 +118,4 @@ wandb/
 
 #other project file
 *_test.txt
+launch.json
