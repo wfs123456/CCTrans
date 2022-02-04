@@ -136,13 +136,21 @@ class GroupAttention(nn.Module):
         total_groups = h_group * w_group
         x = x.reshape(B, h_group, self.ws, w_group, self.ws, C).transpose(2, 3)
 
-        qkv = self.qkv(x).reshape(B, total_groups, -1, 3, self.num_heads, C // self.num_heads).permute(3, 0, 1, 4, 2, 5)
+        qkv = self.qkv(x).reshape(B, total_groups, -1, 3, self.num_heads, C // self.num_heads).permute(0, 3, 1, 4, 2, 5)
+        #    B, hw, ws*ws, 3, n_head, head_dim  to 
+        # -> B, 3 , hw, n_head, ws*ws, head_dim
+        q = qkv[:, 0, :] 
+        k = qkv[:, 1, :]
+        v = qkv[:, 2, :]  # B, hw, n_head, ws*ws, head_dim
+
+        #qkv_old = self.qkv(x).reshape(B, total_groups, -1, 3, self.num_heads, C // self.num_heads).permute(3,0, 1, 4, 2, 5)
+        #qo, ko, vo = qkv_old[0], qkv_old[1], qkv_old[2] 
+
         # B, hw, ws*ws, 3, n_head, head_dim -> 3, B, hw, n_head, ws*ws, head_dim
-        q, k, v = qkv[0], qkv[1], qkv[2]  # B, hw, n_head, ws*ws, head_dim
-        attn = (q @ k.transpose(-2, -1)) * self.scale  # B, hw, n_head, ws*ws, ws*ws
+        pos = len(k.shape)
+        attn = (q @ k.transpose(pos -2, pos-1)) * self.scale  # B, hw, n_head, ws*ws, ws*ws
         attn = attn.softmax(dim=-1)
-        attn = self.attn_drop(
-            attn)  # attn @ v-> B, hw, n_head, ws*ws, head_dim -> (t(2,3)) B, hw, ws*ws, n_head,  head_dim
+        attn = self.attn_drop(attn)  # attn @ v-> B, hw, n_head, ws*ws, head_dim -> (t(2,3)) B, hw, ws*ws, n_head,  head_dim
         attn = (attn @ v).transpose(2, 3).reshape(B, h_group, w_group, self.ws, self.ws, C)
         x = attn.transpose(2, 3).reshape(B, N, C)
         x = self.proj(x)
@@ -182,12 +190,13 @@ class Attention(nn.Module):
             x_ = x.permute(0, 2, 1).reshape(B, C, H, W)
             x_ = self.sr(x_).reshape(B, C, -1).permute(0, 2, 1)
             x_ = self.norm(x_)
-            kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+            kv = self.kv(x_).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(0, 2, 3, 1, 4)
         else:
-            kv = self.kv(x).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        k, v = kv[0], kv[1]
+            kv = self.kv(x).reshape(B, -1, 2, self.num_heads, C // self.num_heads).permute(0 ,2 , 3, 1, 4)
+        k, v = kv[:, 0, :], kv[:, 1, :]
 
-        attn = (q @ k.transpose(-2, -1)) * self.scale
+        pos = len(k.shape)
+        attn = (q @ k.transpose(pos -2, pos -1)) * self.scale
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
 
