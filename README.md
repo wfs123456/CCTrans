@@ -34,6 +34,11 @@ Take a look at the arguments accepted by ```train.py```
 * python vis_densityMap.py
 * save to ./vis/part_A_final
 
+# TensorRT
+Require [torch2trt](https://github.com/NVIDIA-AI-IOT/torch2trt)
+
+See ```torch_to_trt.py```
+
 # Environment
 	See requirements.txt
 	
