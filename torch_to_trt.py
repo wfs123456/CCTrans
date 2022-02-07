@@ -18,7 +18,7 @@ def load_model(args, FP_16=False):
     model.to(device)
     model.load_state_dict(torch.load(args.weight_path, device))
     model.eval()
-    return model if not FP_16 else model.half()
+    return model if not FP_16 else model.half() 
 
 
 
@@ -66,9 +66,6 @@ def convert_softmax(ctx):
     elif len(ctx.method_args) >= 2:
         dim = ctx.method_args[1]
         
-    # convert negative dims
-#     import pdb
-#     pdb.set_trace()
     if dim < 0:
         dim = len(input.shape) + dim
 
@@ -88,18 +85,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-
-
-    model = load_model(args, FP_16=False)
+    USE_FP16 = True
+    model = load_model(args, FP_16=USE_FP16)
 
     # create example data
-    x = torch.ones((4, 3, 256, 256)).cuda()
+    x = torch.ones((4, 3, 256, 256)).half().cuda() if USE_FP16 else torch.ones((4, 3, 256, 256)).cuda()
 
     # convert to TensorRT feeding sample data as input
-    model_trt = torch2trt(model, [x], max_batch_size=226)
+    model_trt = torch2trt(model, [x], max_batch_size=226, fp16_mode=USE_FP16, log_level=trt.Logger.INFO)
 
-    x = torch.ones((4, 3, 256, 256)).cuda()
-    
+  
     start = time.time()
     y, _ = model(x)
     print("Inference (pt) in :", round(time.time() - start, 2))
@@ -109,4 +104,5 @@ if __name__ == "__main__":
     print("Inference(trt) in :", round(time.time() - start, 2))
 
     # save
-    torch.save(model_trt.state_dict(), 'model_weights/trt_512x512.pth')
+    model_save_path = 'model_weights/trt_512x512_FP16.pth' if USE_FP16 else 'model_weights/trt_512x512.pth'
+    torch.save(model_trt.state_dict(), model_save_path)
