@@ -483,10 +483,7 @@ class CPVTV2(PyramidVisionTransformer):
     def forward(self, x):
         x = self.forward_features(x)
         mu = self.regression(x[1], x[2], x[3])
-        B, C, H, W = mu.size()
-        mu_sum = mu.view([B, -1]).sum(1).unsqueeze(1).unsqueeze(2).unsqueeze(3)
-        mu_normed = mu / (mu_sum + 1e-6)
-        return mu, mu_normed
+        return mu
 
 
 class PCPVT(CPVTV2):
