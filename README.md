@@ -16,11 +16,12 @@ Our code reaches this result with the standard hyperparameter set in code. Train
 * adopt code of DM-Count.
 * [link](https://github.com/cvlab-stonybrook/DM-Count)
 
+# Pre-trained weights
+* Download  pretrained weights for ```alt_gvt_large.pth```  [link](https://drive.google.com/file/d/1um39wxIaicmOquP2fr_SiZdxNCUou8w-/view). Move the file under ```model_weights``` folder
+
 # Training
 Take a look at the arguments accepted by ```train.py```
 * update root "data-dir" in ./train.py.
-* load pretrained weights of ImageNet-1k in ./Networks/ALTGVT.py.
-* pretrained weights [link](https://drive.google.com/file/d/1um39wxIaicmOquP2fr_SiZdxNCUou8w-/view)
 * [new] Added [wandb](https://wandb.ai/) integration. If you want to log with wandb, set ```--wandb 1``` in ```train.py``` after having logged in to wandb (```wandb login``` in console)
 * launch with ```python train.py```
 
@@ -32,6 +33,11 @@ Take a look at the arguments accepted by ```train.py```
 # Visualization
 * python vis_densityMap.py
 * save to ./vis/part_A_final
+
+# TensorRT
+Require [torch2trt](https://github.com/NVIDIA-AI-IOT/torch2trt)
+
+See ```torch_to_trt.py```
 
 # Environment
 	See requirements.txt
